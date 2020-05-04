@@ -1,0 +1,63 @@
+---
+- name: Installing Wordpress
+  become: True
+  hosts: all
+
+  tasks:
+  - name: Installing Dependency for Wordpress
+    yum:
+     name:
+      - php-mysqlnd
+      - php-dom
+      - php-simplexml
+      - php-xml 
+      - php-xmlreader
+      - php-curl 
+      - php-exif
+      - php-ftp
+      - php-gd 
+      - php-iconv
+      - php-json
+      - php-mbstring 
+      - php-posix
+      - php-sockets
+      - php-tokenizer 
+     state: present
+
+  - name: Download wordpress.tar
+    get_url:
+     url: "https://wordpress.org/latest.tar.gz"
+     dest: /home/ansadmin/wordpress.tar.gz
+     mode: '0777'
+
+  - name: Extract WordPress
+    command: "tar xzf /home/ansadmin/wordpress.tar.gz -C /var/www/html"
+
+  - name: Change ownership to Apache:Apache 
+    file:
+     path: /var/www/html/wordpress
+     state: directory
+     recurse: yes
+     owner: ansadmin
+     group: ansadmin
+
+  - name: Copy sample config file
+    command: "mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php"
+
+  - name: Update Wordpress config file
+    lineinfile:
+     path: /var/www/html/wordpress/wp-config.php
+     regexp: "{{item.regexp}}"
+     line: "{{item.line}}"
+    with_items:
+      - {'regexp': "define\\( 'DB_NAME', '(.)+' \\);", 'line': "define( 'DB_NAME', 'compufy' );"}
+      - {'regexp': "define\\( 'DB_USER', '(.)+' \\);", 'line': "define( 'DB_USER', 'yash' );"}
+      - {'regexp': "define\\( 'DB_PASSWORD', '(.)+' \\);", 'line': "define( 'DB_PASSWORD', '12345' );"}
+
+  - name: Changing the selinux persmission
+    command: "chcon -t httpd_sys_rw_content_t /var/www/html/wordpress -R"
+
+  - name: Restart httpd
+    service:
+     name: httpd
+     state: restarted

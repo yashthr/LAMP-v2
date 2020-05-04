@@ -1,0 +1,58 @@
+---
+- name: To install phpmyadmin
+  become: True
+  hosts: all
+
+  tasks:
+  - name: Install a list of packages
+    yum:
+     name:
+      - php 
+      - php-pdo
+      - php-pecl-zip
+      - php-json
+      - php-mbstring
+      - php-mysqlnd
+      - php-json
+      - php-mbstring 
+      - wget
+      - unzip
+     state: present
+
+  - name: Download phpmyadmin.tar
+    get_url:
+     url: https://files.phpmyadmin.net/phpMyAdmin/5.0.1/phpMyAdmin-5.0.1-all-languages.zip
+     dest: /home/ansadmin
+
+  - name: Unarchive a file that is already on the remote machine
+    unarchive:
+     src: /home/ansadmin/phpMyAdmin-5.0.1-all-languages.zip
+     dest: /home/ansadmin/
+     remote_src: yes
+
+  - name: Move phpmyadmin to /usr/share/phpmyadmin
+    command: "mv phpMyAdmin-5.0.1-all-languages /usr/share/phpmyadmin"
+
+  - name: Move phpmyadmin to /usr/share/phpmyadmin
+    command: "mkdir /usr/share/phpmyadmin/tmp"
+
+  - name: Changing apache:apache to phpmyadmin 
+    command: "chown -R apache:apache /usr/share/phpmyadmin"
+
+  - name: Adding permissions
+    command: "chmod 777 /usr/share/phpmyadmin/tmp"
+  
+  - name: Copy file with owner and permissions
+    copy:
+     src: /home/ansadmin/playbooks/phpmyadmin.conf
+     dest: /etc/httpd/conf.d/phpmyadmin.conf
+     owner: ansadmin
+     group: ansadmin
+
+     #- name: Adding Selinux Permission
+    #   command: "chcon -Rv --type=httpd_sys_content_t /usr/share/phpmyadmin/*"
+
+  - name: Restart service httpd, in all cases
+    service:
+     name: httpd
+     state: restarted

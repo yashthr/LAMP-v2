@@ -1,0 +1,22 @@
+---
+- name: Install php packages
+  hosts: all
+  become: True
+
+
+  tasks:
+  - name: Installing php packages for RHEL
+    yum:
+     name: ["php", "php-mysqlnd", "php-pdo","php-gd" ,"php-mbstring"]
+     state: present
+
+  - name: copying php file to remote system
+    copy:
+     src: /home/ansadmin/playbooks/info.php
+     dest: /var/www/html/info.php
+
+
+  - name: Starting the service
+    service:
+     name: httpd
+     state: started
